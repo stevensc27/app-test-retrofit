@@ -102,6 +102,13 @@
             android:layout_height="wrap_content"
             android:text="Lista de publicaciones" />
 
+        <ProgressBar
+            android:id="@+id/progressBarPosts"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewPostsResults"
             android:layout_width="match_parent"

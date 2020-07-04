@@ -11,16 +11,18 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import co.com.ceiba.mobile.pruebadeingreso.R;
+import co.com.ceiba.mobile.pruebadeingreso.models.Users;
 import co.com.ceiba.mobile.pruebadeingreso.ui.view.PostActivity;
 import co.com.ceiba.mobile.pruebadeingreso.models.UserVo;
 
 public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapter.ViewHolderMainActivity> {
     @NonNull
-    private ArrayList<UserVo> usersList;
+    private List<Users> usersList;
 
-    public MainActivityAdapter(@NonNull ArrayList<UserVo> usersList) {
+    public MainActivityAdapter(@NonNull List<Users> usersList) {
         this.usersList = usersList;
     }
 
@@ -65,7 +67,7 @@ public class MainActivityAdapter extends RecyclerView.Adapter<MainActivityAdapte
         }
     }
 
-    public void setData(ArrayList<UserVo> usersList){
+    public void setData(List<Users> usersList){
         this.usersList = usersList;
         notifyDataSetChanged();
     }

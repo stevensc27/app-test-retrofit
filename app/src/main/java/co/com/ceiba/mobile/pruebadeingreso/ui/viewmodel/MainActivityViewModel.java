@@ -19,6 +19,7 @@ import co.com.ceiba.mobile.pruebadeingreso.models.Users;
 import co.com.ceiba.mobile.pruebadeingreso.models.UserVo;
 import co.com.ceiba.mobile.pruebadeingreso.services.rest.Endpoints;
 import co.com.ceiba.mobile.pruebadeingreso.services.JsonPlaceHolder;
+import co.com.ceiba.mobile.pruebadeingreso.utilities.Resource;
 import co.com.ceiba.mobile.pruebadeingreso.utilities.SQLiteConnectionHelper;
 import co.com.ceiba.mobile.pruebadeingreso.utilities.Utilities;
 import retrofit2.Call;
@@ -29,17 +30,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivityViewModel extends AndroidViewModel {
 
-    private MutableLiveData<ArrayList<UserVo>> usersList;
+    private MutableLiveData<Resource<List<Users>>> usersList;
     private SQLiteConnectionHelper conn;
 
     public MainActivityViewModel(@NonNull Application application){
         super(application);
         usersList = new MutableLiveData<>();
-
-        // if is first time
-        if (!existsUsers()) importUsers();
-
-        setUsers();
     }
 
     private boolean existsUsers() {
@@ -56,6 +52,7 @@ public class MainActivityViewModel extends AndroidViewModel {
         conn = new SQLiteConnectionHelper(getApplication(), "androidDB", null, 1);
         SQLiteDatabase db = conn.getWritableDatabase();
 
+        usersList.postValue(Resource.loading());
 
         JsonPlaceHolder jsonPlaceHolder;
         Retrofit retrofit = new Retrofit.Builder()
@@ -72,7 +69,8 @@ public class MainActivityViewModel extends AndroidViewModel {
                     for (Users user : response.body()){
                         saveUser(user, db);
                     }
-                    saveUserOnLive(response.body());
+                    // saveUserOnLive(response.body());
+                    usersList.postValue(Resource.success(response.body()));
                 } else {
                     Log.i("onResponseNoOk", String.valueOf(response.code()));
                 }
@@ -104,31 +102,29 @@ public class MainActivityViewModel extends AndroidViewModel {
         db.insert(Utilities.USERS, Utilities.USERS_ID, values);
     }
 
-    private void saveUserOnLive(List<Users> users){
-        ArrayList<UserVo> usersArrayList = new ArrayList<>();
-        for (Users user : users){
-            usersArrayList.add(new UserVo(user.getId(),user.getName(),user.getPhone(),user.getEmail()));
-        }
-        usersList.setValue(usersArrayList);
-    }
-
     public void setUsers(){
-        ArrayList<UserVo> usersArrayList = new ArrayList<>();
+        List<Users> usersListLocal = new ArrayList<>();
         conn = new SQLiteConnectionHelper(getApplication(), Utilities.DB,null,1);
         SQLiteDatabase db = conn.getReadableDatabase();
         String[] columns = {Utilities.USERS_ID, Utilities.USERS_NAME, Utilities.USERS_PHONE, Utilities.USERS_EMAIL};
         Cursor cursor = db.query(Utilities.USERS,columns,null,null,null,null,null);
         try{
             while (cursor.moveToNext()){
-                usersArrayList.add(new UserVo(cursor.getInt(0),cursor.getString(1),cursor.getString(2),cursor.getString(3)));
+                usersListLocal.add(new Users(cursor.getInt(0),cursor.getString(1),cursor.getString(2),cursor.getString(3)));
             }
         } finally {
             cursor.close();
         }
-        usersList.setValue(usersArrayList);
+        usersList.setValue(Resource.success(usersListLocal));
     }
 
-    public LiveData<ArrayList<UserVo>> getUsersList(){
+    public MutableLiveData<Resource<List<Users>>> getUsers(){
+        // if is first time
+        if (!existsUsers()){
+            importUsers();
+        } else {
+            setUsers();
+        }
 
         return usersList;
     }

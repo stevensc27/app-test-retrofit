@@ -5,22 +5,28 @@ import androidx.lifecycle.ViewModelProvider;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import co.com.ceiba.mobile.pruebadeingreso.R;;
+import co.com.ceiba.mobile.pruebadeingreso.models.Users;
 import co.com.ceiba.mobile.pruebadeingreso.ui.viewmodel.MainActivityViewModel;
 import co.com.ceiba.mobile.pruebadeingreso.models.UserVo;
 import co.com.ceiba.mobile.pruebadeingreso.ui.adapter.MainActivityAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ArrayList<UserVo> usersArrayList = new ArrayList<>();
+    ProgressBar progressBar;
+    private List<Users> usersArrayList = new ArrayList<>();
     private MainActivityAdapter adapter;
 
     @Override
@@ -46,12 +52,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable editable) {
                 String input = editTextSearch.getText().toString().toLowerCase();
-                ArrayList<UserVo> newUsersList = new ArrayList<>();
+                ArrayList<Users> newUsersList = new ArrayList<>();
 
                 for (int i=0;i<usersArrayList.size();i++){
-                    UserVo userVo = usersArrayList.get(i);
-                    if (userVo.getName().toLowerCase().contains(input)){
-                        newUsersList.add(userVo);
+                    Users user = usersArrayList.get(i);
+                    if (user.getName().toLowerCase().contains(input)){
+                        newUsersList.add(user);
                     }
                 }
 
@@ -62,14 +68,29 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        progressBar = findViewById(R.id.progressBarUsers);
 
         RecyclerView recyclerView = findViewById(R.id.recyclerViewSearchResults);
         recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(),LinearLayoutManager.VERTICAL,false));
 
-        mainActivityViewModel.getUsersList().observe(this, userVos -> {
-            usersArrayList = userVos;
-            adapter = new MainActivityAdapter(userVos);
-            recyclerView.setAdapter(adapter);
+        mainActivityViewModel.getUsers().observe(this, response -> {
+            switch (response.status) {
+                case LOADING:
+                    progressBar.setVisibility(View.VISIBLE);
+                    break;
+                case ERROR:
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, response.message, Toast.LENGTH_LONG).show();
+                    break;
+                case SUCCESS:
+                    progressBar.setVisibility(View.GONE);
+                    usersArrayList = response.data;
+                    adapter = new MainActivityAdapter(response.data);
+                    recyclerView.setAdapter(adapter);
+                    break;
+            }
+
+
         });
     }
 

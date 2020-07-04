@@ -1,7 +1,10 @@
 package co.com.ceiba.mobile.pruebadeingreso.ui.view;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -9,11 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import co.com.ceiba.mobile.pruebadeingreso.R;
-import co.com.ceiba.mobile.pruebadeingreso.ui.viewmodel.PostActivityViewModel;
 import co.com.ceiba.mobile.pruebadeingreso.ui.adapter.PostActivityAdapter;
+import co.com.ceiba.mobile.pruebadeingreso.ui.viewmodel.PostActivityViewModel;
 
 public class PostActivity extends AppCompatActivity {
 
+    ProgressBar progressBar;
     private PostActivityAdapter adapter;
 
     @Override
@@ -21,11 +25,12 @@ public class PostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post);
 
-        Integer userId = getIntent().getIntExtra("id",0);
+        Integer userId = getIntent().getIntExtra("id", 0);
 
         TextView name = findViewById(R.id.name);
         TextView phone = findViewById(R.id.phone);
         TextView email = findViewById(R.id.email);
+        progressBar = findViewById(R.id.progressBarPosts);
 
         PostActivityViewModel postActivityViewModel = new ViewModelProvider(this).get(PostActivityViewModel.class);
         postActivityViewModel.searchUser(userId);
@@ -36,19 +41,29 @@ public class PostActivity extends AppCompatActivity {
         });
 
         RecyclerView recyclerView = findViewById(R.id.recyclerViewPostsResults);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(),LinearLayoutManager.VERTICAL,false));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false));
 
-        postActivityViewModel.getPosts(userId).observe(this, posts -> {
-            adapter = new PostActivityAdapter(posts);
-            recyclerView.setAdapter(adapter);
+        postActivityViewModel.getPosts(userId).observe(this, response -> {
+            switch (response.status) {
+                case LOADING:
+                    progressBar.setVisibility(View.VISIBLE);
+                    break;
+                case ERROR:
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, response.message, Toast.LENGTH_LONG).show();
+                    break;
+                case SUCCESS:
+                    if (response.data != null) {
+                        progressBar.setVisibility(View.GONE);
+                        adapter = new PostActivityAdapter(response.data);
+                        recyclerView.setAdapter(adapter);
+                    }
+            }
         });
-
     }
 
     @Override
     protected void onStart() {
         super.onStart();
     }
-
-
 }
